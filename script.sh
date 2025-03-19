@@ -95,33 +95,29 @@ echo "::group:: Print tflint details ..."
 echo '::endgroup::'
 
 echo "::group:: Running TFLint..."
-set +Eeuo pipefail
+  set +Eeuo pipefail
 
-if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
-  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found."
-fi
+  if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
+    echo "Error: Target directory '${INPUT_TFLINT_TARGET_DIR}' does not exist!"
+    exit 1
+  fi
 
-if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
-  echo "Error: Target directory '${INPUT_TFLINT_TARGET_DIR}' does not exist!"
-  exit 1
-fi
+  # Configure chdir flag only if needed
+  CHDIR_COMMAND=""
+  if [[ "${INPUT_TFLINT_TARGET_DIR}" == "." ]]; then
+    echo "Using default working directory. No need to specify chdir"
+  else
+    echo "Custom target directory specified: ${INPUT_TFLINT_TARGET_DIR}"
+    CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
+  fi
 
-# Configure chdir flag only if needed
-CHDIR_COMMAND=""
-if [[ "${INPUT_TFLINT_TARGET_DIR}" == "." ]]; then
-  echo "Using default working directory. No need to specify chdir"
-else
-  echo "Custom target directory specified: ${INPUT_TFLINT_TARGET_DIR}"
-  CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
-fi
+  # Run TFLint with proper directory handling
+  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
+    --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif"
 
-# Run TFLint with proper directory handling
-TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
-  --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif"
-
-# Capture exit status
-tflint_return="${PIPESTATUS[0]}" exit_code=$?
-echo "tflint-return-code=${tflint_return}" >> "$GITHUB_ENV"
+  # Capture exit status
+  tflint_return=$?
+  echo "tflint-return-code=${tflint_return}" >> "$GITHUB_ENV"
 
 echo "::endgroup::"
 exit "${exit_code}"
