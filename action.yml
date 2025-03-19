@@ -44,8 +44,7 @@ inputs:
   flags:
     description: |
       List of arguments to send to tflint
-      Default is --call-module-type=all.
-    default: '--call-module-type=all'
+    default: ''
 
 outputs:
   tflint-return-code:
