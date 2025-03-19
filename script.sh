@@ -111,9 +111,18 @@ else
   CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
 fi
 
-# Check if TFLint configuration exists, warn if missing
 if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
-  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found. Running without a config."
+  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found. Creating a default one."
+
+  cat <<EOF > "${INPUT_TFLINT_CONFIG}"
+plugin "terraform" {
+  enabled = true
+  preset  = "recommended"
+}
+EOF
+
+  echo "Default .tflint.hcl created:"
+  cat "${INPUT_TFLINT_CONFIG}"
 fi
 
 # Run TFLint with proper directory handling
