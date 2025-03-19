@@ -1,0 +1,77 @@
+name: 'Run tflint'
+description: 'Run tflint and post the results to the GitHub Security tab.'
+author: 'RoseSecurity'
+
+branding:
+  icon: 'cloud'
+  color: 'purple'
+
+inputs:
+  github_token:
+    description: 'GITHUB_TOKEN'
+    required: true
+    default: ${{ github.token }}
+  working_directory:
+    description: |
+      Directory to run the action on, from the repo root.
+      Default is . ( root of the repository)
+    default: '.'
+  tflint_version:
+    description: |
+      The tflint version to install and use.
+      Default is to use the latest release version.
+    default: 'v0.49.0'
+  tflint_rulesets:
+    description: |
+      Space separated, official (from the terraform-linters GitHub organization) tflint rulesets to install and use. If a pre-configured `TFLINT_PLUGIN_DIR` is set, rulesets are installed in that directory.
+      Default is empty.
+    default: ''
+  tflint_init:
+    description: |
+      Whether or not to run tflint --init prior to running scan [true,false]
+      Default is `false`.
+    default: 'false'
+  tflint_target_dir:
+    description: |
+      The target dir for the tflint command. This is the directory passed to tflint as opposed to working_directory which is the directory the command is executed from.
+      Default is . ( root of the repository)
+    default: '.'
+  tflint_config:
+    description: |
+      Config file name for tflint.
+      Default is `.tflint.hcl`.
+    default: '.tflint.hcl'
+  flags:
+    description: |
+      List of arguments to send to tflint
+      Default is --call-module-type=all.
+    default: '--call-module-type=all'
+
+outputs:
+  tflint-return-code:
+    description: 'tflint command return code'
+    value: ${{ steps.tflint.outputs.tflint-return-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run tflint
+      id: tflint
+      run: $GITHUB_ACTION_PATH/script.sh
+      shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        INPUT_TFLINT_VERSION: ${{ inputs.tflint_version }}
+        INPUT_TFLINT_RULESETS: ${{ inputs.tflint_rulesets }}
+        INPUT_TFLINT_INIT: ${{ inputs.tflint_init }}
+        INPUT_TFLINT_TARGET_DIR: ${{ inputs.tflint_target_dir }}
+        INPUT_TFLINT_CONFIG: ${{ inputs.tflint_config }}
+        INPUT_FLAGS: ${{ inputs.flags }}
+
+    - name: Post tflint Findings
+      id: upload
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ github.workspace }}/tflint.sarif
+      if: always()
