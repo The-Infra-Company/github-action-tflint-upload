@@ -1,4 +1,4 @@
-# github-action-tflint-upload [![Latest Release](https://img.shields.io/github/release/The-Infra-Company/github-action-tflint-upload.svg)](https://github.com/cloudposse/github-action-tflint-upload/releases/latest)
+# github-action-tflint-upload [![Latest Release](https://img.shields.io/github/release/The-Infra-Company/github-action-tflint-upload.svg)](https://github.com/The-Infra-Company/github-action-tflint-upload/releases/latest)
 
 A GitHub Action to run tflint and post the results to the GitHub Security tab.
 
