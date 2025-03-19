@@ -20,7 +20,7 @@ inputs:
     description: |
       The tflint version to install and use.
       Default is to use the latest release version.
-    default: 'v0.49.0'
+    default: 'latest'
   tflint_rulesets:
     description: |
       Space separated, official (from the terraform-linters GitHub organization) tflint rulesets to install and use. If a pre-configured `TFLINT_PLUGIN_DIR` is set, rulesets are installed in that directory.
