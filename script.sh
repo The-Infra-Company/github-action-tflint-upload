@@ -99,7 +99,6 @@ set +Eeuo pipefail
 
 if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
   echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found."
-  exit 1
 fi
 
 if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
