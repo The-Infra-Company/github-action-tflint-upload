@@ -114,15 +114,15 @@ fi
 if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
   echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found. Creating a default one."
 
-  cat <<EOF > "${INPUT_TFLINT_CONFIG}"
+  cat <<EOF > ~/.tflint.hcl
 plugin "terraform" {
   enabled = true
   preset  = "recommended"
 }
 EOF
 
-  echo "Default .tflint.hcl created:"
-  cat "${INPUT_TFLINT_CONFIG}"
+  $INPUT_TFLINT_CONFIG="~/.tflint.hcl"
+  echo "Default ~/.tflint.hcl created:"
 fi
 
 # Run TFLint with proper directory handling
