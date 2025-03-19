@@ -99,8 +99,12 @@ echo "::group:: Running tflint..."
 
   [ -d "${INPUT_TFLINT_TARGET_DIR}" ] || { echo "Target directory not found: ${INPUT_TFLINT_TARGET_DIR}"; exit 1; }
 
+  # We only want to specify the tflint target directory if it is not the default to avoid conflicts
   CHDIR_COMMAND=""
-  if [[ "${INPUT_TFLINT_TARGET_DIR}" != "." ]]; then
+  if [ "$INPUT_TFLINT_TARGET_DIR" == "." ]; then
+    echo "Using default working directory. No need to specify chdir"
+  else
+    echo "Custom target directory specified."
     CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
   fi
 
