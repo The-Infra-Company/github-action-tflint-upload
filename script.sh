@@ -94,26 +94,35 @@ echo "::group:: Print tflint details ..."
   "${TFLINT_PATH}/tflint" --version -c "${INPUT_TFLINT_CONFIG}"
 echo '::endgroup::'
 
-echo "::group:: Running tflint..."
-  set +Eeuo pipefail
+echo "::group:: Running TFLint..."
+set +Eeuo pipefail
 
-  [ -d "${INPUT_TFLINT_TARGET_DIR}" ] || { echo "Target directory not found: ${INPUT_TFLINT_TARGET_DIR}"; exit 1; }
+if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
+  echo "Error: Target directory '${INPUT_TFLINT_TARGET_DIR}' does not exist!"
+  exit 1
+fi
 
-  # We only want to specify the tflint target directory if it is not the default to avoid conflicts
-  CHDIR_COMMAND=""
-  if [ "$INPUT_TFLINT_TARGET_DIR" == "." ]; then
-    echo "Using default working directory. No need to specify chdir"
-  else
-    echo "Custom target directory specified."
-    CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
-  fi
+# Configure chdir flag only if needed
+CHDIR_COMMAND=""
+if [[ "${INPUT_TFLINT_TARGET_DIR}" == "." ]]; then
+  echo "Using default working directory. No need to specify chdir"
+else
+  echo "Custom target directory specified: ${INPUT_TFLINT_TARGET_DIR}"
+  CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
+fi
 
-  # shellcheck disable=SC2086
-  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
-    --chdir="${INPUT_TFLINT_TARGET_DIR}" --format=sarif 2>&1 | tee "${GITHUB_WORKSPACE}/tflint.sarif"
+# Check if TFLint configuration exists, warn if missing
+if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
+  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found. Running without a config."
+fi
 
-  tflint_return="${PIPESTATUS[0]}" exit_code=$?
-  echo "tflint-return-code=${tflint_return}" >> "$GITHUB_ENV"
+# Run TFLint with proper directory handling
+TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
+  --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif" 2>&1
+
+# Capture exit status
+tflint_return="${PIPESTATUS[0]}" exit_code=$?
+echo "tflint-return-code=${tflint_return}" >> "$GITHUB_ENV"
+
 echo "::endgroup::"
-
 exit "${exit_code}"
