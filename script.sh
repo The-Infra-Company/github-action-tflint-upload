@@ -71,27 +71,37 @@ echo "::group:: Installing tflint (${TFLINT_VERSION}) ..."
   rm -rf "${TEMP_PATH}/tflint.zip" "${TEMP_PATH}/temp-tflint"
 echo '::endgroup::'
 
-for RULESET in ${INPUT_TFLINT_RULESETS}; do
-  PLUGIN="tflint-ruleset-${RULESET}"
-  REPOSITORY="https://github.com/terraform-linters/${PLUGIN}"
+if [[ -n "${INPUT_TFLINT_RULESETS:-}" ]]; then
+  for RULESET in ${INPUT_TFLINT_RULESETS}; do
+    PLUGIN="tflint-ruleset-${RULESET}"
+    REPOSITORY="https://github.com/terraform-linters/${PLUGIN}"
 
-  echo "::group:: Installing tflint plugin for ${RULESET} (latest) ..."
-    curl --silent --show-error --fail \
-      --location "${REPOSITORY}"/releases/latest/download/"${PLUGIN}"_"${os}"_"${arch}".zip \
-      --output "${PLUGIN}.zip" || { echo "Failed to download plugin: ${PLUGIN}"; exit 1; }
+    echo "::group:: Installing tflint plugin for ${RULESET} (latest) ..."
+      curl --silent --show-error --fail \
+        --location "${REPOSITORY}"/releases/latest/download/"${PLUGIN}"_"${os}"_"${arch}".zip \
+        --output "${PLUGIN}.zip" || { echo "Failed to download plugin: ${PLUGIN}"; exit 1; }
 
-    unzip "${PLUGIN}.zip" -d "${TFLINT_PLUGIN_DIR}" && rm "${PLUGIN}.zip"
-  echo '::endgroup::'
-done
+      unzip "${PLUGIN}.zip" -d "${TFLINT_PLUGIN_DIR}" && rm "${PLUGIN}.zip"
+    echo '::endgroup::'
+  done
+fi
 
 if [[ "${INPUT_TFLINT_INIT:-false}" == "true" ]]; then
   echo "::group:: Initialize tflint from local configuration"
-  TFLINT_PLUGIN_DIR="${TFLINT_PLUGIN_DIR}" GITHUB_TOKEN="${INPUT_GITHUB_TOKEN}" "${TFLINT_PATH}/tflint" --init -c "${INPUT_TFLINT_CONFIG}"
+  if [[ -n "${INPUT_TFLINT_CONFIG:-}" ]]; then
+    TFLINT_PLUGIN_DIR="${TFLINT_PLUGIN_DIR}" GITHUB_TOKEN="${INPUT_GITHUB_TOKEN}" "${TFLINT_PATH}/tflint" --init -c "${INPUT_TFLINT_CONFIG}"
+  else
+    TFLINT_PLUGIN_DIR="${TFLINT_PLUGIN_DIR}" GITHUB_TOKEN="${INPUT_GITHUB_TOKEN}" "${TFLINT_PATH}/tflint" --init
+  fi
   echo "::endgroup::"
 fi
 
 echo "::group:: Print tflint details ..."
+if [[ -n "${INPUT_TFLINT_CONFIG:-}" ]]; then
   "${TFLINT_PATH}/tflint" --version -c "${INPUT_TFLINT_CONFIG}"
+else
+  "${TFLINT_PATH}/tflint" --version
+fi
 echo '::endgroup::'
 
 echo "::group:: Running TFLint..."
@@ -104,20 +114,33 @@ echo "::group:: Running TFLint..."
 
   # Configure chdir flag only if needed
   CHDIR_COMMAND=""
-  if [[ "${INPUT_TFLINT_TARGET_DIR}" == "." ]]; then
-    echo "Using default working directory. No need to specify chdir"
-  else
+  if [[ "${INPUT_TFLINT_TARGET_DIR}" != "." ]]; then
     echo "Custom target directory specified: ${INPUT_TFLINT_TARGET_DIR}"
     CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
   fi
 
   # Run TFLint with proper directory handling
-  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
-    --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif"
+  TFLINT_CMD=("${TFLINT_PATH}/tflint")
+
+  if [[ -n "${INPUT_TFLINT_CONFIG:-}" ]]; then
+    TFLINT_CMD+=("-c" "${INPUT_TFLINT_CONFIG}")
+  fi
+
+  TFLINT_CMD+=("--format=sarif")
+
+  if [[ -n "${INPUT_FLAGS:-}" ]]; then
+    TFLINT_CMD+=(${INPUT_FLAGS})
+  fi
+
+  if [[ -n "${CHDIR_COMMAND}" ]]; then
+    TFLINT_CMD+=("${CHDIR_COMMAND}")
+  fi
+
+  "${TFLINT_CMD[@]}" > "${GITHUB_WORKSPACE}/tflint.sarif"
 
   # Capture exit status
   tflint_return=$?
   echo "tflint-return-code=${tflint_return}" >> "$GITHUB_ENV"
 
 echo "::endgroup::"
-exit "${exit_code}"
+exit "${tflint_return}"
