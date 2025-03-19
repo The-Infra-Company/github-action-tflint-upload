@@ -117,7 +117,7 @@ fi
 
 # Run TFLint with proper directory handling
 TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" \
-  --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif" 2>&1
+  --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint.sarif"
 
 # Capture exit status
 tflint_return="${PIPESTATUS[0]}" exit_code=$?
