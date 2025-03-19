@@ -97,6 +97,11 @@ echo '::endgroup::'
 echo "::group:: Running TFLint..."
 set +Eeuo pipefail
 
+if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
+  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found."
+  exit 1
+fi
+
 if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
   echo "Error: Target directory '${INPUT_TFLINT_TARGET_DIR}' does not exist!"
   exit 1
@@ -109,21 +114,6 @@ if [[ "${INPUT_TFLINT_TARGET_DIR}" == "." ]]; then
 else
   echo "Custom target directory specified: ${INPUT_TFLINT_TARGET_DIR}"
   CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
-fi
-
-if [[ ! -f "${INPUT_TFLINT_CONFIG}" ]]; then
-  echo "Warning: TFLint config '${INPUT_TFLINT_CONFIG}' not found. Creating a default one."
-
-  cat <<EOF > "$HOME/.tflint.hcl"
-plugin "terraform" {
-  enabled = true
-  preset  = "recommended"
-}
-EOF
-
-  # Correct variable assignment
-  INPUT_TFLINT_CONFIG="$HOME/.tflint.hcl"
-  echo "Default TFLint config created at: $INPUT_TFLINT_CONFIG"
 fi
 
 # Run TFLint with proper directory handling
