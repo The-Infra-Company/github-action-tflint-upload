@@ -5,23 +5,33 @@ A GitHub Action to run tflint and post the results to the GitHub Security tab.
 ## Usage
 
 ```yaml
-  name: Pull Request
-  on:
-    pull_request:
-      branches: [ 'main' ]
-      types: [opened, synchronize, reopened, closed, labeled, unlabeled]
+name: TFLint
 
-  jobs:
-    context:
-      runs-on: ubuntu-latest
-      steps:
-        - name: tflint
-          uses: The-Infra-Company/github-action-tflint-upload@main
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            working_directory: "infra" # Optional. Change working directory
-            tflint_rulesets: "azurerm google" # Optional. Extra official rulesets to install
-            flags: "--call-module-type=all" # Optional. Add custom tflint flags
+on:
+  pull_request:
+    branches: [ 'main' ]
+    types: [ opened, synchronize, reopened, closed, labeled, unlabeled ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3  # Ensures Terraform is installed
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform
+
+      - name: Run TFLint
+        uses: The-Infra-Company/github-action-tflint-upload@f0462defb9da6bbc286ff45d63399a40d85437d7 # v0.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          working_directory: "terraform" # Optional
+          tflint_rulesets: "aws"
 ```
 
 <!-- action-docs-inputs source="action.yml" -->
