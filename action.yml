@@ -1,5 +1,5 @@
-name: 'tflint Sarif Upload'
-description: 'Run tflint and upload sarif results to GitHub Security tab.'
+name: 'tflint Findings Upload'
+description: 'Run tflint and upload sarif results to GitHub Security findings.'
 author: 'RoseSecurity'
 
 branding:
