@@ -2,6 +2,8 @@
 
 A GitHub Action to run tflint and post the results to the GitHub Security tab.
 
+![findings](./docs/tflint-findings.png)
+
 ## Usage
 
 ```yaml
@@ -20,18 +22,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3  # Ensures Terraform is installed
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
-        working-directory: terraform
+        working-directory: "terraform/modules/vpc"
 
       - name: Run TFLint
-        uses: The-Infra-Company/github-action-tflint-upload@f0462defb9da6bbc286ff45d63399a40d85437d7 # v0.1.0
+        uses: The-Infra-Company/github-action-tflint-upload@a742d2ea7d35dc6a3cc8e929daf199f5e9a848ae # v0.2.0
+        env:
+          DEBUG_MODE: "true"
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: "terraform" # Optional
+          tflint_version: "v0.49.0" # TFLint added a "Bug Fix" with v0.50.0 that added .tflint.hcl as a requirement
+          working_directory: "terraform/modules/vpc"
           tflint_rulesets: "aws"
+          flags: >-
+            --disable-rule=terraform_unused_required_providers
+            --disable-rule=terraform_deprecated_index
 ```
 
 <!-- action-docs-inputs source="action.yml" -->
