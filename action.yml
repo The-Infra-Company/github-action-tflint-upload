@@ -1,5 +1,5 @@
-name: 'Run tflint'
-description: 'Run tflint and post the results to the GitHub Security tab.'
+name: 'tflint Sarif Upload'
+description: 'Run tflint and upload sarif results to GitHub Security tab.'
 author: 'RoseSecurity'
 
 branding:
@@ -14,13 +14,13 @@ inputs:
   working_directory:
     description: |
       Directory to run the action on, from the repo root.
-      Default is . ( root of the repository)
+      Default is . (root of the repository)
     default: '.'
   tflint_version:
     description: |
       The tflint version to install and use.
       Default is to use the latest release version.
-    default: 'v0.49.0'
+    default: 'latest'
   tflint_rulesets:
     description: |
       Space separated, official (from the terraform-linters GitHub organization) tflint rulesets to install and use. If a pre-configured `TFLINT_PLUGIN_DIR` is set, rulesets are installed in that directory.
@@ -34,7 +34,7 @@ inputs:
   tflint_target_dir:
     description: |
       The target dir for the tflint command. This is the directory passed to tflint as opposed to working_directory which is the directory the command is executed from.
-      Default is . ( root of the repository)
+      Default is . (root of the repository)
     default: '.'
   tflint_config:
     description: |
@@ -44,8 +44,9 @@ inputs:
   flags:
     description: |
       List of arguments to send to tflint
-      Default is --module.
-    default: '--module'
+      For the output to be parsable by reviewdog --format=checkstyle is enforced
+      Default is --call-module-type=all.
+    default: '--call-module-type=all'
 
 outputs:
   tflint-return-code:
@@ -55,9 +56,8 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Run tflint
+    - run: $GITHUB_ACTION_PATH/script.sh
       id: tflint
-      run: $GITHUB_ACTION_PATH/script.sh
       shell: bash
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
@@ -69,9 +69,3 @@ runs:
         INPUT_TFLINT_CONFIG: ${{ inputs.tflint_config }}
         INPUT_FLAGS: ${{ inputs.flags }}
 
-    - name: Post tflint Findings
-      id: upload
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: ${{ github.workspace }}/tflint.sarif
-      if: always()
