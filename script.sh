@@ -91,23 +91,24 @@ echo "::group:: Print tflint details ..."
   "${TFLINT_PATH}/tflint" --version -c "${INPUT_TFLINT_CONFIG}"
 echo '::endgroup::'
 
-
 echo '::group:: Running tflint ...'
   # Allow failures now
   set +Eeuo pipefail
 
+  # Ensure SARIF file exists before execution
+  touch "${GITHUB_WORKSPACE}/tflint-results.sarif"
 
-  # We only want to specify the tflint target directory if it is not the default to avoid conflicts
-  CHDIR_COMMAND=""
-  if [ "$INPUT_TFLINT_TARGET_DIR" == "." ]; then
-    echo "Using default working directory. No need to specify chdir"
+  # Run TFLint and capture errors separately
+  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint-results.sarif" 2> /tmp/tflint-error.log || true
+
+  # Check if SARIF file was created
+  if [[ -s "${GITHUB_WORKSPACE}/tflint-results.sarif" ]]; then
+    echo "TFLint SARIF report generated successfully."
   else
-    echo "Custom target directory specified."
-    CHDIR_COMMAND="--chdir=${INPUT_TFLINT_TARGET_DIR}"
+    echo "TFLint SARIF report is empty. Check logs for errors."
+    cat /tmp/tflint-error.log
+    exit 1
   fi
-
-  # shellcheck disable=SC2086
-  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint-results.sarif" 2>&1 || true
 
   exit_code=$?
   echo "tflint-return-code=${exit_code}" >> "${GITHUB_OUTPUT}"
