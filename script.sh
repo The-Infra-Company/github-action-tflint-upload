@@ -95,7 +95,6 @@ echo "::group:: Print tflint details ..."
 echo '::endgroup::'
 
 echo "::group:: Running TFLint..."
-set +Eeuo pipefail
 
 if [[ ! -d "${INPUT_TFLINT_TARGET_DIR}" ]]; then
   echo "Error: Target directory '${INPUT_TFLINT_TARGET_DIR}' does not exist!"
