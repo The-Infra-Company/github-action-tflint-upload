@@ -7,7 +7,7 @@ A GitHub Action to run tflint and post the results to the GitHub Security tab.
 ## Usage
 
 ```yaml
-name: TFLint
+name: tflint
 
 on:
   pull_request:
@@ -28,10 +28,8 @@ jobs:
         run: terraform init
         working-directory: "terraform/modules/vpc"
 
-      - name: Run TFLint
+      - name: Run tflint
         uses: The-Infra-Company/github-action-tflint-upload@a742d2ea7d35dc6a3cc8e929daf199f5e9a848ae # v0.2.0
-        env:
-          DEBUG_MODE: "true"
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tflint_version: "v0.49.0" # TFLint added a "Bug Fix" with v0.50.0 that added .tflint.hcl as a requirement
