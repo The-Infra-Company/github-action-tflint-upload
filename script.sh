@@ -102,10 +102,10 @@ echo '::group:: Running tflint ...'
   fi
 
   # shellcheck disable=SC2086
-  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND}
+  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint-results.sarif" 2>&1
 
-  tflint_return=$?
-  echo "tflint-return-code=${tflint_return}" >> "${GITHUB_OUTPUT}"
+  exit_code=$?
+  echo "tflint-return-code=${exit_code}" >> "${GITHUB_OUTPUT}"
 echo '::endgroup::'
 
 exit "${exit_code}"

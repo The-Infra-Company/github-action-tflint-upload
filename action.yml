@@ -69,3 +69,9 @@ runs:
         INPUT_TFLINT_CONFIG: ${{ inputs.tflint_config }}
         INPUT_FLAGS: ${{ inputs.flags }}
 
+    - name: Upload tflint Sarif Findings
+      id: upload
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ github.workspace }}/tflint-results.sarif
+      if: always()
