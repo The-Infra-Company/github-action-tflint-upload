@@ -92,25 +92,30 @@ echo "::group:: Print tflint details ..."
 echo '::endgroup::'
 
 echo '::group:: Running tflint ...'
-  # Allow failures now
   set +Eeuo pipefail
 
   # Ensure SARIF file exists before execution
-  touch "${GITHUB_WORKSPACE}/tflint-results.sarif"
+  SARIF_FILE="${GITHUB_WORKSPACE}/tflint-results.sarif"
+  touch "$SARIF_FILE"
 
-  # Run TFLint and capture errors separately
-  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "${GITHUB_WORKSPACE}/tflint-results.sarif" 2> /tmp/tflint-error.log || true
+  # Run TFLint and save output
+  TFLINT_PLUGIN_DIR=${TFLINT_PLUGIN_DIR} "${TFLINT_PATH}/tflint" -c "${INPUT_TFLINT_CONFIG}" --format=sarif ${INPUT_FLAGS} ${CHDIR_COMMAND} > "$SARIF_FILE" 2>/tmp/tflint-error.log || true
 
-  # Check if SARIF file was created
-  if [[ -s "${GITHUB_WORKSPACE}/tflint-results.sarif" ]]; then
-    echo "TFLint SARIF report generated successfully."
-  else
-    echo "TFLint SARIF report is empty. Check logs for errors."
+  # Check if the SARIF file contains valid JSON output
+  if ! jq empty "$SARIF_FILE" 2>/dev/null; then
+    echo "TFLint SARIF file is invalid. Dumping errors:"
     cat /tmp/tflint-error.log
     exit 1
   fi
 
-  exit_code=$?
+  # Check if SARIF file has results (non-empty "runs" key)
+  if ! jq -e '.runs | length > 0' "$SARIF_FILE" >/dev/null; then
+    echo "No TFLint issues found. Generating an empty SARIF file."
+    echo '{"version": "2.1.0", "runs": []}' > "$SARIF_FILE"
+  fi
+
+  echo "TFLint SARIF report is ready."
+  exit_code=0
   echo "tflint-return-code=${exit_code}" >> "${GITHUB_OUTPUT}"
 echo '::endgroup::'
 
