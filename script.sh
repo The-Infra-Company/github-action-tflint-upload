@@ -3,6 +3,11 @@
 # Fail fast on errors, unset variables, and failures in piped commands
 set -Eeuo pipefail
 
+# If DEBUG_MODE is set to true, print all executed commands
+if [ "${DEBUG_MODE:-false}" == "true" ]; then
+  set -x
+fi
+
 cd "${GITHUB_WORKSPACE}/${INPUT_WORKING_DIRECTORY}" || exit
 
 echo '::group::Preparing'
